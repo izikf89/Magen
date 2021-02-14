@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script type="text/javascript" src="web3.min.js"></script>
+    <script type="text/javascript" src="truffle-contract.min.js"></script>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <style>
+        body {
+            text-align: center;
+            direction: rtl;
+        }
+    </style>
+</head>
+
+<body>
+    <input id='position' placeholder="שם מקום">
+    <button class="btn btn-primary" onclick="addPosition()">הוספת מקום</button>
+    
+    <br><br><hr><br>
+
+    <input id='startVisit' placeholder="שם מקום">
+    <button class="btn btn-primary" onclick="startVisit()">תחילת ביקור</button>
+    
+    <br><br><hr><br>
+
+    <input id='finishVisit' placeholder="שם מקום">
+    <button class="btn btn-primary" onclick="finishVisit()">סיום ביקור</button>
+    
+    <br><br><hr><br>
+
+    <button class="btn btn-danger" onclick="infection()">פרסום הדבקה</button>
+
+    <br><br><hr><br>
+
+    <h3>בידודים: <span id="infection"></span> </h3>
+    <script>
+
+        async function addPosition() {
+            let position = document.getElementById('position').value;
+            await dep.addPosition(position, { from: account });
+            console.log('addPosition finish')
+            document.getElementById('position').value = '';
+        }
+
+        async function startVisit() {
+            let startVisit = document.getElementById('startVisit').value;
+            await dep.startVisit(account, startVisit, { from: account });
+            console.log('startVisit finish')
+            document.getElementById('startVisit').value = '';
+        }
+
+        async function finishVisit() {
+            let finishVisit = document.getElementById('finishVisit').value;
+            await dep.finishVisit(account, finishVisit, { from: account });
+            console.log('finishVisit finish');
+            document.getElementById('finishVisit').value = '';
+        }
+
+        async function infection() {
+            let owner = await dep.getOwner();
+            let res = await dep.infection(account, { from: owner });
+            console.log('infection finish', res)
+            chekcInfection();
+        }
+
+        async function chekcInfection() {
+            let res = await dep.chekcInfection(account, { from: account });
+            console.log(res);
+            document.getElementById('infection').innerText = res;
+        }
+
+        async function getOwner() {
+            return await dep.getOwner()
+        }
+
+        async function init() {
+            const web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:9545'));
+            const Magen_artifacts = (await (await fetch('./build/contracts/Magen.json')).json());
+            const contractAbstraction = TruffleContract(Magen_artifacts);
+            contractAbstraction.setProvider(web3.currentProvider);
+            dep = await contractAbstraction.deployed();
+            console.log('dep ready')
+
+            account = (await ethereum.request({ method: 'eth_requestAccounts' }))[0];
+            chekcInfection();
+        }
+
+        init();
+
+        ethereum.on('accountsChanged', (accountsArr) => {
+            console.log('accountsChanged', accountsArr)
+            account = accountsArr[0];
+            chekcInfection()
+        });
+    </script>
+</body>
+
+</html>
